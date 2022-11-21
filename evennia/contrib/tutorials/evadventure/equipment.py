@@ -200,7 +200,7 @@ class EquipmentHandler:
         if armor:
             armor_str = f"You are wearing {armor}"
 
-        helmet = slots[WieldLocation.BODY]
+        helmet = slots[WieldLocation.HEAD]
         if helmet:
             helmet_str = f" and {helmet} on your head."
 

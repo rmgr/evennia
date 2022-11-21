@@ -70,7 +70,6 @@ class EvAdventureObject(DefaultObject):
         """
         return "No help for this item."
 
-
 class EvAdventureObjectFiller(EvAdventureObject):
     """
     In _Knave_, the inventory slots act as an extra measure of how you are affected by
