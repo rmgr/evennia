@@ -5,10 +5,14 @@ EvAdventure character generation.
 from evennia import create_object
 from evennia.prototypes.spawner import spawn
 from evennia.utils.evmenu import EvMenu
+from evennia.objects.models import ObjectDB
+
+from django.conf import settings
 
 from .characters import EvAdventureCharacter
 from .random_tables import chargen_tables
 from .rules import dice
+
 _ABILITIES = {
     "STR": "strength",
     "DEX": "dexterity",
@@ -135,16 +139,22 @@ class TemporaryCharacterSheet:
             equipment=", ".join(equipment),
         )
 
-    def apply(self):
+    def apply(self, account):
         """
         Once the chargen is complete, call this create and set up the character.
 
         """
 
+        start_location = ObjectDB.objects.get_id(settings.START_LOCATION)
+        default_home = ObjectDB.objects.get_id(settings.DEFAULT_HOME)
+        permissions = settings.PERMISSION_ACCOUNT_DEFAULT
         # creating character with given abilities
         new_character = create_object(
             EvAdventureCharacter,
             key=self.name,
+            location=start_location,
+            home=default_home,
+            permissions=permissions,
             attributes=(
                 ("strength", self.strength),
                 ("dexterity", self.dexterity),
@@ -156,6 +166,11 @@ class TemporaryCharacterSheet:
                 ("hp_max", self.hp_max),
                 ("desc", self.desc),
             ),
+        )
+
+        new_character.locks.add(
+            "puppet:id(%i) or pid(%i) or perm(Developer) or pperm(Developer);delete:id(%i) or"
+            " perm(Admin)" % (new_character.id, account.id, account.id)
         )
         # spawn equipment
         if self.weapon:
@@ -301,8 +316,8 @@ def node_apply_character(caller, raw_string, **kwargs):
 
     """
     tmp_character = kwargs["tmp_character"]
-    new_character = tmp_character.apply()
-    caller.db._playble_characters = [new_character]
+    new_character = tmp_character.apply(caller)
+    caller.db._playable_characters.append(new_character)
 
     text = "Character created!"
 
